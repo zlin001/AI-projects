@@ -1,6 +1,7 @@
 # AI-projects
 
 All testing command for search project:
+
 python pacman.py --layout testMaze --pacman GoWestAgent
 python pacman.py --layout tinyMaze --pacman GoWestAgent
 python pacman.py -h
