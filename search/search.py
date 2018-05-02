@@ -61,12 +61,6 @@ class SearchProblem:
         """
         util.raiseNotDefined()
         
-class Path(object):
-    def __init__(self, locations, directions, cost):
-        self.locations = locations
-        self.directions = directions
-        self.cost = cost
-
 
 def tinyMazeSearch(problem):
     """
@@ -78,6 +72,39 @@ def tinyMazeSearch(problem):
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
+def genericSearch(problem, fringe, heuristic = None):
+    visited = []
+    actionList = []
+    initial = problem.getStartState()
+    
+    if isinstance(fringe, util.Stack) or isinstance(fringe, util.Queue):
+        fringe.push((initial, actionList))
+    elif isinstance(fringe, util.PriorityQueue):
+        fringe.push((initial, actionList), heuristic(initial, problem))
+        
+    while fringe:
+        if isinstance(fringe, util.Stack) or isinstance(fringe, util.Queue):
+            node, actions = fringe.pop()
+        elif isinstance(fringe, util.PriorityQueue):
+            node, actions = fringe.pop()
+            
+        if not node in visited:
+            visited.append(node)
+            if problem.isGoalState(node):
+                return actions
+            successors = problem.getSuccessors(node)
+            for successor in successors:
+                coordinate, direction, cost = successor
+                newActions = actions + [direction]
+                if isinstance(fringe, util.Stack) or isinstance(fringe, util.Queue):
+                    fringe.push((coordinate, newActions))
+                elif isinstance(fringe, util.PriorityQueue):
+                    newCost = problem.getCostOfActions(newActions) + \
+                               heuristic(coordinate, problem)
+                    fringe.push((coordinate, newActions), newCost)
+                    
+    return []
+    
 def depthFirstSearch(problem):
     """
     Search the deepest nodes in the search tree first.
@@ -93,107 +120,18 @@ def depthFirstSearch(problem):
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
     "*** YOUR CODE HERE ***"
-    path = Path([problem.getStartState()], [], 0)
-    
-    if problem.isGoalState(problem.getStartState()):
-        return path.directions
-        
-    stack = util.Stack()
-    stack.push(path)
-    
-    while not stack.isEmpty():
-        currentPath = stack.pop()
-        currentLocation = currentPath.locations[-1]
-        if problem.isGoalState(currentLocation):
-            return currentPath.directions
-        else:
-            nextSteps = problem.getSuccessors(currentLocation)
-            for nextStep in nextSteps:
-                nextLocation = nextStep[0]
-                nextDirection = nextStep[1]
-                nextCost = nextStep[2]
-                if nextLocation not in currentPath.locations:
-                    nextLocations = currentPath.locations[:]
-                    nextLocations.append(nextLocation)
-                    nextDirections = currentPath.directions[:]
-                    nextDirections.append(nextDirection)
-                    nextCosts = currentPath.cost + nextCost
-                    nextPath = Path(nextLocations, nextDirections, nextCosts)
-                    stack.push(nextPath)
-                    
-    return[]
+    return genericSearch(problem, util.Stack())
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
-    path = Path([problem.getStartState()], [], 0)
-    
-    if problem.isGoalState(problem.getStartState()):
-        return path.directions
-        
-    queue = util.Queue()
-    queue.push(path)
-    visited = [problem.getStartState()]
-    
-    while not queue.isEmpty():
-        currentPath = queue.pop()
-        currentLocation = currentPath.locations[-1]
-        if problem.isGoalState(currentLocation):
-            return currentPath.directions
-        else:
-            nextSteps = problem.getSuccessors(currentLocation)
-            for nextStep in nextSteps:
-                nextLocation = nextStep[0]
-                nextDirection = nextStep[1]
-                nextCost = nextStep[2]
-                if (nextLocation not in currentPath.locations) and (nextLocation not in visited):
-                    if not problem.isGoalState(nextLocation):
-                        visited.append(nextLocation)
-                    nextLocations = currentPath.locations[:]
-                    nextLocations.append(nextLocation)
-                    nextDirections = currentPath.directions[:]
-                    nextDirections.append(nextDirection)
-                    nextCosts = currentPath.cost + nextCost
-                    nextPath = Path(nextLocations, nextDirections, nextCosts)
-                    queue.push(nextPath)
-                    
-    return[]
+    return genericSearch(problem, util.Queue())
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    path = Path([problem.getStartState()], [], 0)
+    return aStarSearch(problem)
     
-    if problem.isGoalState(problem.getStartState()):
-        return path.directions
-        
-    queue = util.PriorityQueue()
-    queue.push(path, 0)
-    visited = [problem.getStartState()]
-    
-    while not queue.isEmpty():
-        currentPath = queue.pop()
-        currentLocation = currentPath.locations[-1]
-        if problem.isGoalState(currentLocation):
-            return currentPath.directions
-        else:
-            nextSteps = problem.getSuccessors(currentLocation)
-            for nextStep in nextSteps:
-                nextLocation = nextStep[0]
-                nextDirection = nextStep[1]
-                nextCost = nextStep[2]
-                if (nextLocation not in currentPath.locations) and (nextLocation not in visited):
-                    if not problem.isGoalState(nextLocation):
-                        visited.append(nextLocation)
-                    nextLocations = currentPath.locations[:]
-                    nextLocations.append(nextLocation)
-                    nextDirections = currentPath.directions[:]
-                    nextDirections.append(nextDirection)
-                    nextCosts = currentPath.cost + nextCost
-                    nextPath = Path(nextLocations, nextDirections, nextCosts)
-                    queue.push(nextPath, nextCosts)
-                    
-    return[]
 
 def nullHeuristic(state, problem=None):
     """
@@ -205,39 +143,7 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    path = Path([problem.getStartState()], [], 0)
-    
-    if problem.isGoalState(problem.getStartState()):
-        return path.directions
-        
-    queue = util.PriorityQueue()
-    queue.push(path, 0)
-    visited = [problem.getStartState()]
-    
-    while not queue.isEmpty():
-        currentPath = queue.pop()
-        currentLocation = currentPath.locations[-1]
-        if problem.isGoalState(currentLocation):
-            return currentPath.directions
-        else:
-            nextSteps = problem.getSuccessors(currentLocation)
-            for nextStep in nextSteps:
-                nextLocation = nextStep[0]
-                nextDirection = nextStep[1]
-                nextCost = nextStep[2]
-                if (nextLocation not in currentPath.locations) and (nextLocation not in visited):
-                    if not problem.isGoalState(nextLocation):
-                        visited.append(nextLocation)
-                    nextLocations = currentPath.locations[:]
-                    nextLocations.append(nextLocation)
-                    nextDirections = currentPath.directions[:]
-                    nextDirections.append(nextDirection)
-                    nextCosts = currentPath.cost + nextCost
-                    nextHeuristic = heuristic(nextLocation, problem)
-                    nextPath = Path(nextLocations, nextDirections, nextCosts)
-                    queue.push(nextPath, nextCosts + nextHeuristic)
-                    
-    return[]
+    return genericSearch(problem, util.PriorityQueue(), heuristic)
 
 
 # Abbreviations
